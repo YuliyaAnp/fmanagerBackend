@@ -12,43 +12,31 @@ namespace fmanagerBackend.Controllers
     [Route("api/[controller]")]
     public class TransactionsController : Controller
     {
-        private readonly TransactionContext _context;
+        private readonly TransactionContext context;
 
         public TransactionsController(TransactionContext context)
         {
-            _context = context;
+            this.context = context;
         }
 
-        // GET api/transactions
         [HttpGet]
-        public async Task<string> Get()
-        {            var trs = await _context.Transaction.ToListAsync();
-            string result = string.Empty;
-            trs.ForEach(t => result += JsonConvert.SerializeObject(t));
-            return result;
+        public async Task<IEnumerable<Transaction>> GetAll()
+        {            
+            return await context.Transaction.ToListAsync();
         }
 
-        // GET: api/transactions/5
         [HttpGet("{id}")]
-        public async Task<string> Get(int? id)
+        public async Task<IActionResult> GetById(int id)
         {
-            //if (id == null)
-            //{
-            //    return null;
-            //}
+            var transaction = await context.Transaction.SingleOrDefaultAsync(t => t.Id == id);
+            if (transaction == null)
+            {
+                return NotFound();
+            }
 
-            var transaction = await _context.Transaction
-                .SingleOrDefaultAsync(m => m.Id == id);
-            //if (transaction == null)
-            //{
-            //    return null;
-            //}
-
-            return $"value = {id}";
+            return new ObjectResult(transaction);
         }
 
-
-        // POST api/values
         [HttpPost]
         public void Post([FromBody]string value)
         {
