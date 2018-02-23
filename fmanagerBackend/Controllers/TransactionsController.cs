@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using fmanagerBackend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 
 namespace fmanagerBackend.Controllers
 {
@@ -25,7 +24,7 @@ namespace fmanagerBackend.Controllers
             return await context.Transaction.ToListAsync();
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetTransaction")]
         public async Task<IActionResult> GetById(int id)
         {
             var transaction = await context.Transaction.SingleOrDefaultAsync(t => t.Id == id);
@@ -38,20 +37,48 @@ namespace fmanagerBackend.Controllers
         }
 
         [HttpPost]
-        public void Post([FromBody]string value)
+        public async Task<IActionResult> Create([FromBody]Transaction transaction)
         {
+            if (transaction == null)
+                return BadRequest();
+            
+            await context.Transaction.AddAsync(transaction);
+            context.SaveChanges();
+
+            return CreatedAtRoute("GetTransaction", new {id = transaction.Id}, transaction);
         }
 
-        // PUT api/values/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
+        public async Task<IActionResult> Put(int id, [FromBody]Transaction transaction)
         {
+            if (transaction == null || transaction.Id != id)
+                return BadRequest();
+
+            var tran = await context.Transaction.SingleOrDefaultAsync(t => t.Id == id);
+            if (tran == null)
+                return NotFound();
+
+            tran.Sum = transaction.Sum;
+            tran.Description = transaction.Description;
+
+            context.Transaction.Update(tran);
+            context.SaveChanges();
+
+            return new NoContentResult();
         }
 
-        // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
+            var trans = await context.Transaction.SingleOrDefaultAsync(t => t.Id == id);
+            if (trans == null)
+                return NotFound();
+
+            context.Transaction.Remove(trans);
+            context.SaveChanges();
+
+            return new NoContentResult();
+            
         }
     }
 }
